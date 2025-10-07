@@ -1,0 +1,41 @@
+version: "2"
+
+run:
+  go: "1.25"
+  timeout: 5m
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - ineffassign
+    - gocritic
+    - nolintlint
+    - unconvert
+
+linters-settings:
+  goimports:
+    local-prefixes: sleeve
+  govet:
+    check-shadowing: true
+  nolintlint:
+    require-explanation: true
+    require-specific: true
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Exclude generated files
+    - path: '.*_gen\.go'
+
+    - path: "graph/generated.go"
+
+    # Exclude specific linters in test files
+    - path: '_test\.go'
+      linters:
+        - errcheck # Allow unchecked errors in tests
