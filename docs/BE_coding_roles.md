@@ -8,7 +8,7 @@
 
 1. **Resolver**
     - GraphQL I/O担当。
-    - 入力を受け取り → UseCase呼び出し → 出力返すだけ。 
+    - 入力を受け取り → UseCase呼び出し → 出力返すだけ。
 
 2. **UseCase (Service)**
     - 手続きの流れを書く場所。
@@ -24,20 +24,47 @@
 
 # ディレクトリ構造
 ```
-db/
-  server.go              # サーバー起動時の処理
-  error_presenter.go     # ErrorPresenterでカスタムエラーを定義
-  graph/                 # gqlgenで生成されたファイル
-    schema.resolver.go   # プロジェクトのI/O
-    schema.graphqls      # スキーマ定義
-    resolver.go          # 依存注入
-    models/              # 生成モデル、domainモデルは置かない
-  domain/                # model, customErrorの定義
-  usecase/               # domainモデルのinterface定義、処理呼び出し、resolverへの返信
-    utils/               # 共通処理、AI補助、error判定関数、parseや計算処理など
-  repository/            # 実際のDBアクセス
-gqlgen.yml               # gqlgenコード生成設定
+be/
+  app/
+    server.go              # サーバー起動時の処理
+    error_presenter.go     # ErrorPresenterでカスタムエラーを定義
+    graph/                 # gqlgenで生成されたファイル
+      schema.resolver.go   # プロジェクトのI/O
+      schema.graphqls      # スキーマ定義
+      resolver.go          # 依存注入
+      models/              # 生成モデル、domainモデルは置かない
+    domain/                # model, customErrorの定義
+    usecase/               # domainモデルのinterface定義、処理呼び出し、resolverへの返信（外部APIはrepository層で行うこと）
+      utils/               # 共通処理、AI補助、error判定関数、parseや計算処理など
+    repository/            # 実際のDBアクセス
+      external_api/        # 外部API用の記述
+        [service_name]_api # それぞれのサービスのディレクトリ
+    gqlgen.yml             # gqlgenコード生成設定
+    middlewares/           # ミドルウェアを定義
+  docs/                    # プロジェクトdocディレクトリ
+    messages/
+      error_messages.go    # ユーザーへのエラーメッセージの定義(日本語)
+      log_messages.go      # ログメッセージの定義（日本語）
+    tasks/
+      [jiraのtaskID]_[task名]/ # taskのドキュメントディレクトリ（タスクのたびにこのディレクトリが生成される。AIが書き込む）
+  config/                  # プロジェクトconfigディレクトリ
+    .env
+    firebase.secret.json
+  migrations/              # migrationファイル置き場
+  .env
+  .gitignore
+  docker-compose.yml
+  README.md
+  Taskfile.yml
 ```
+
+# 非同期(gorutine)に関しての制約
+- `context.Context` を適切に引き回し、タイムアウトやキャンセルを処理できるようにする。
+- 複数のgoroutineの完了を待つ場合は `sync.WaitGroup` を使用する。
+- goroutine内でpanicが発生してもプログラム全体がクラッシュしないように `recover` を使用して適切に処理する。
+- goroutineを起動した側が、そのgoroutineが確実に終了することを保証する設計にする。リソースリークを防ぐ。
+- 原則として、goroutineは **UseCase層** で起動すること。ビジネスロジックの一部として非同期処理を開始・管理するのが責務であるため。
+- Resolver層やRepository層で安易にgoroutineを起動しないこと。
 
 # 命名規則
 ## 変数
@@ -105,6 +132,7 @@ gqlgen.yml               # gqlgenコード生成設定
 - 循環 import
 - マジックナンバー
 - ハードコーディング
+- UseCase外でのDBトランザクションの開始/コミット禁止。
 
 # 制限事項
 - 大きすぎる interface の作成
