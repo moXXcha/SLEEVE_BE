@@ -1,5 +1,5 @@
 # 開発用イメージ
-FROM golang:1.24.4-alpine
+FROM golang:1.25.1-alpine
 
 # 必要なパッケージ
 RUN apk add --no-cache git bash
