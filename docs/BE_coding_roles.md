@@ -8,6 +8,7 @@
 
 - **全体フロー**: `docs/general.md` - 開発タスクの全体フロー
 - **実装手順**: `docs/task_procedure.md` - 詳細な実装手順とテンプレート
+- **コーディングスタイル**: `docs/coding_guide.md` - コーディングスタイルガイド
 - **Git 運用**: `docs/github.md` - Git Flow 運用とコミット規約
 - **DB 操作**: `docs/DB_manual.md` - データベース操作手順
 - **Linter/Formatter**: `docs/lint_format_manual.md` - コード品質管理
@@ -28,8 +29,18 @@
    - AI に「自然言語でユースケースを説明」したら、ここを生成させる。
 
 3. **Domain**
-   - model の定義
-   - ルールや制約の定義
+   - **Entity（エンティティ）**: ビジネス上の実体を表現（例: User, Item, Coordinate）
+   - **ValueObject（値オブジェクト）**: 不変の値を表現（例: Email, Price, ImageURL）
+   - **DomainService**: 複数のEntityにまたがるビジネスロジック
+   - **DomainError**: ドメイン固有のエラー定義
+   - **配置場所**:
+     - `domain/models/code_models/` - Entity、ValueObject
+     - `domain/models/db_models/` - DBスキーマに対応する構造体
+     - `domain/services/` - DomainService（複数Entity間のロジック）
+     - `domain/errors/` - ドメイン固有エラー
+   - **責務の境界**:
+     - Domain層：ビジネスルールの検証（例: メールアドレス形式チェック）
+     - UseCase層：ビジネスフローの制御（例: ユーザー登録の手続き）
 4. **Repository / Infrastructure**
    - 永続化・外部サービス接続。
    - interface と実装を分ける。
@@ -41,6 +52,11 @@ be/
   app/
     server.go              # サーバー起動時の処理
     error_presenter.go     # ErrorPresenterでカスタムエラーを定義
+    tests/                 # 結合テスト置き場
+      integration/         # 結合テストのディレクトリ
+        [feature]/         # 機能ごとのディレクトリ
+        fixtures/          # テストデータ
+        helpers/           # ヘルパー関数
     graph/                 # gqlgenで生成されたファイル
       schema.resolver.go   # プロジェクトのI/O
       schema.graphqls      # スキーマ定義
@@ -50,6 +66,7 @@ be/
       modles/
         db_models/         # dbのテーブルの構造体定義
         code_models/       # コード上で使用するmodelの構造体
+      services/            # DomainService（複数Entity間のロジック）
       errors/
     usecase/               # domainモデルのinterface定義、処理呼び出し、resolverへの返信（外部APIはrepository層で行うこと）
       feature/             # 機能のディレクトリ
@@ -60,12 +77,23 @@ be/
     repository/            # 実際のDBアクセス
       external_api/        # 外部API用の記述
         [service_name]_api # それぞれのサービスのディレクトリ
+    messages/              # メッセージ定義（実装ファイル）
+      [feature]/           # 機能ごとのメッセージディレクトリ
+        errors.go          # 機能固有のエラーメッセージ定義
+        logs.go            # 機能固有のログメッセージ定義
+      common/              # 共通メッセージディレクトリ
+        errors.go          # 共通エラーメッセージ定義
+        logs.go            # 共通ログメッセージ定義
     gqlgen.yml             # gqlgenコード生成設定
     middlewares/           # ミドルウェアを定義
   docs/                    # プロジェクトdocディレクトリ
-    messages/              # メッセージ定義ディレクトリ
-      errors/              # エラーメッセージ定義
-      logs/                # ログメッセージ定義
+    messages/              # メッセージドキュメントディレクトリ
+      [feature]/           # 機能ごとのメッセージドキュメント
+        errors.md          # エラーメッセージの説明（いつ・どのメッセージが出るか）
+        logs.md            # ログメッセージの説明（いつ・どのログが出るか）
+      common/              # 共通メッセージドキュメント
+        errors.md          # 共通エラーメッセージの説明
+        logs.md            # 共通ログメッセージの説明
     tasks/                  # タスクドキュメントディレクトリ
       [jiraのtaskID]_[task名]/ # taskのドキュメントディレクトリ（タスクのたびにこのディレクトリが生成される。AIが書き込む）
   config/                  # プロジェクトconfigディレクトリ

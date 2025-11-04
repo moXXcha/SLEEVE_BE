@@ -11,42 +11,375 @@ AI エージェントが一貫性のあるコミットとプルリクエスト�
 - **全体フロー**: `docs/general.md` - 開発タスクの全体フロー
 - **実装手順**: `docs/task_procedure.md` - 詳細な実装手順とテンプレート
 - **コーディング規約**: `docs/BE_coding_roles.md` - アーキテクチャとコーディング規約
+- **コーディングスタイル**: `docs/coding_guide.md` - コーディングスタイルガイド
 - **DB 操作**: `docs/DB_manual.md` - データベース操作手順
 - **Linter/Formatter**: `docs/lint_format_manual.md` - コード品質管理
 
-## 制約
+## ブランチ戦略
 
-### ブランチ運用（Git Flow）
+### 基本方針
 
-- **main ブランチ**: 本番環境にデプロイされる安定版（リリース済みコード）
-- **feature/[Jira の ID]\_[機能名]**: 機能開発用ブランチ（main から分岐）
-- **release/[Jira の ID]\_[バージョン]**: リリース準備用ブランチ（main から分岐）
-- **hotfix/[Jira の ID]\_[修正内容]**: 緊急修正用ブランチ（main から分岐）
+- **1PR = 1コンテキスト**: 1つのPR（1つのブランチ）では、修正・作成内容が1つのコンテキストにまとまるようにする
+- **Topic Branch運用**: 大きなタスクは複数のサブタスクに分割し、Topic Branchを親として管理する
+- **依存関係の許容**: PRの依存関係を許容し、依存先を親としてブランチを切る
+- **Jira連携**: ブランチごとにJiraでSubtaskを作成し、進捗管理を明確にする
 
-### プルリクエスト制約
+### ブランチの種類
 
-- プルリクエストは必ず main ブランチに対して作成
-- レビュー必須（最低 1 名の承認）
-- 全てのテストが通過している必要がある
-- Linter エラーがない必要がある
-- リリースブランチは main にマージ後、タグを作成
+#### main ブランチ
+- 本番環境にデプロイされる安定版（リリース済みコード）
+- 直接コミット禁止
+- 保護設定あり（レビュー必須、CI通過必須）
+
+#### topic/[JiraのID]_[機能名]
+- **用途**: 大きな機能追加や、複数のサブタスクに分かれる作業の親ブランチ
+- **分岐元**: main
+- **マージ先**: main
+- **作成タイミング**:
+  - 3つ以上のサブタスクに分かれる場合
+  - 大きな機能追加の場合
+  - 複数人で並行開発する場合
+- **対応Jira**: Story/Task
+- **例**: `topic/SLEEVE-100_user_authentication`
+
+#### feature/[JiraのID]_[機能名]
+- **用途**: 実際の機能実装・修正を行うブランチ
+- **分岐元**:
+  - 依存関係がない場合: Topic Branch
+  - 依存関係がある場合: 依存先のFeature Branch
+- **マージ先**:
+  - 依存関係がない場合: Topic Branch
+  - 依存関係がある場合: 依存先のFeature Branch
+- **対応Jira**: Subtask
+- **例**: `feature/SLEEVE-101_firebase_setup`
+
+#### hotfix/[JiraのID]_[修正内容]
+- **用途**: 緊急修正用ブランチ
+- **分岐元**: main
+- **マージ先**: main
+- **例**: `hotfix/SLEEVE-999_fix_login_bug`
+
+### ブランチ構造の例
+
+大きな機能「ユーザー認証機能」を実装する場合：
+
+```
+main
+ └─ topic/SLEEVE-100_user_authentication (Story/Task)
+      ├─ feature/SLEEVE-101_firebase_setup (Subtask 1: 依存なし)
+      ├─ feature/SLEEVE-102_user_model (Subtask 2: 依存なし)
+      ├─ feature/SLEEVE-103_login_api (Subtask 3: 102に依存)
+      │    └─ feature/SLEEVE-104_login_validation (Subtask 4: 103に依存)
+      └─ feature/SLEEVE-105_logout_api (Subtask 5: 依存なし)
+```
+
+**マージフロー**:
+1. `feature/SLEEVE-101` → `topic/SLEEVE-100` (依存なし)
+2. `feature/SLEEVE-102` → `topic/SLEEVE-100` (依存なし)
+3. `feature/SLEEVE-103` → `feature/SLEEVE-102` (102に依存) → 102がtopicにマージ後、103もtopicにマージ
+4. `feature/SLEEVE-104` → `feature/SLEEVE-103` (103に依存) → 103がtopicにマージ後、104もtopicにマージ
+5. `feature/SLEEVE-105` → `topic/SLEEVE-100` (依存なし)
+6. 全てのサブタスク完了後: `topic/SLEEVE-100` → `main`
+
+### マージ戦略
+
+#### Feature Branch → Topic Branch (または依存先Feature Branch)
+- **マージ方法**: Squash and merge
+- **理由**: コミット履歴を整理し、Topic Branch上で見やすくする
+
+#### Feature Branch → Feature Branch (依存関係がある場合)
+- **マージ方法**: Merge commit
+- **理由**: 依存先の変更を保持したまま、自分の変更を追加する
+
+#### Topic Branch → main
+- **マージ方法**: Merge commit
+- **理由**: Topic Branchの履歴を残し、機能単位での変更を追跡可能にする
+
+#### hotfix → main
+- **マージ方法**: Squash and merge
+- **理由**: 緊急修正は単一のコミットとして記録
+
+### 依存関係があるSubtaskの詳細マージ手順
+
+**ケース: topic → task1 → task2 のようにブランチが切られている場合**
+
+依存関係がある場合のマージは、**変更差分を見やすくする**ために以下の順序で行います。
+
+#### 前提条件
+```
+- topic/SLEEVE-100_user_authentication (親ブランチ)
+- feature/SLEEVE-102_user_model (task1)
+- feature/SLEEVE-103_login_api (task2: 102に依存)
+```
+
+#### ステップ1: task1を実装・PR作成
+
+```bash
+# task1をtopicから分岐して実装
+git checkout topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-102_user_model
+
+# 実装・テスト・コミット...
+
+# PR作成（base: topic）
+gh pr create --base topic/SLEEVE-100_user_authentication --title "SLEEVE-102: Userモデルの作成"
+```
+
+**レビュー・マージ:**
+- オーナーがレビュー・承認
+- Squash and mergeでtopicにマージ
+- task1のFeature Branchを削除
+
+#### ステップ2: topicブランチを最新化
+
+```bash
+git checkout topic/SLEEVE-100_user_authentication
+git pull origin topic/SLEEVE-100_user_authentication
+```
+
+#### ステップ3: task2を実装・PR作成
+
+**重要な判断基準:**
+- **task1が既にtopicにマージ済みの場合**: task2をtopicから分岐
+- **task1がまだマージされていない場合**: task2をtask1から分岐
+
+**パターンA: task1が既にtopicにマージ済みの場合**
+
+```bash
+# task2をtopicから分岐して実装（task1の変更を含むため）
+git checkout topic/SLEEVE-100_user_authentication
+git pull origin topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-103_login_api
+
+# 実装・テスト・コミット...
+# （この時点でtask2にはtask1の変更も含まれている）
+
+# PR作成（base: topic）
+gh pr create --base topic/SLEEVE-100_user_authentication --title "SLEEVE-103: ログインAPIの実装"
+```
+
+**レビュー・マージ:**
+- オーナーがレビュー・承認
+- Squash and mergeでtopicにマージ（**task2の変更差分だけがマージされる**）
+- task2のFeature Branchを削除
+
+**パターンB: task1がまだマージされていない場合**
+
+```bash
+# task2をtask1から分岐して実装
+git checkout feature/SLEEVE-102_user_model
+git pull origin feature/SLEEVE-102_user_model
+git checkout -b feature/SLEEVE-103_login_api
+
+# 実装・テスト・コミット...
+
+# PR作成（base: task1）
+gh pr create --base feature/SLEEVE-102_user_model --title "SLEEVE-103: ログインAPIの実装"
+
+# task1がtopicにマージされた後、task2もtopicにPR作成
+gh pr create --base topic/SLEEVE-100_user_authentication --title "SLEEVE-103: ログインAPIの実装"
+```
+
+**レビュー・マージ:**
+- オーナーがレビュー・承認
+- task1がtopicにマージ後、task2もtopicにマージ
+- task2のFeature Branchを削除
+
+#### 理由
+- task1がtopicにマージ済みであれば、task2もtopicから分岐することで、task2のPRではtask2の変更だけが見やすくなる
+- task1がまだマージされていない場合、task2をtask1から分岐することで、依存関係を明確にできる
+- 最終的にはtopicに両方マージされるが、レビュー時に変更差分が明確になる
+- Squash and mergeによって、task1の変更は重複せず、task2の変更差分だけがコミットされる
+
+### ブランチの最新化ルール
+
+**重要:** 各Subtaskのマージ後、必ずtopicまたはmainブランチを最新化してください。
+
+```bash
+# 複数Subtaskの場合: Topic Branchを最新化
+git checkout topic/[親ID]_[機能名]
+git pull origin topic/[親ID]_[機能名]
+
+# 単一タスクの場合: Main Branchを最新化
+git checkout main
+git pull origin main
+```
+
+**最新化のタイミング:**
+- 他のSubtaskがマージされた時
+- 新しいSubtaskの実装を開始する前
+- PR作成前
+
+### Jira連携
+
+#### Epic
+- プロジェクト全体の大きな目標
+- 例: 「ユーザー管理機能の実装」
+
+#### Story/Task
+- Topic Branchに対応
+- 複数のSubtaskを持つ
+- 例: `SLEEVE-100: ユーザー認証機能の実装`
+
+#### Subtask
+- Feature Branchに対応
+- 1つの具体的な実装・修正内容
+- 例:
+  - `SLEEVE-101: Firebase Authenticationのセットアップ`
+  - `SLEEVE-102: Userモデルの作成`
+  - `SLEEVE-103: ログインAPIの実装`
+
+### プルリクエスト運用
+
+#### PR作成ルール
+
+- **レビュー必須**: オーナーのレビューと承認が必要
+- **CI通過必須**: 全てのテストが通過している必要がある
+- **Linterチェック**: golangci-lintエラーがないこと
+- **依存関係の明記**: PR descriptionに依存関係を記載
+
+#### PR descriptionテンプレート
+
+```markdown
+## 概要
+[このPRで実装する内容を簡潔に記述]
+
+## 変更内容
+- [変更内容1]
+- [変更内容2]
+
+## 依存関係
+- Depends on: #123, #124 (このPRがマージされる前に必要なPR)
+- Blocks: #126 (このPRに依存しているPR)
+
+## テスト
+- [ ] 単体テストが通過
+- [ ] 結合テストが通過
+- [ ] 手動テストが完了
+
+## 関連チケット
+- Jira: SLEEVE-XXX
+
+## チェックリスト
+- [ ] コーディング規約に準拠
+- [ ] Linterエラーがない
+- [ ] ドキュメントが更新されている
+- [ ] DB変更を行った場合は `docs/db_schema.md` を更新している
+```
+
+#### レビュー待機フロー（現状の運用）
+
+**⚠️ 注意：以下は現状の運用です。メンバーが増えた際は変更される可能性があります。**
+
+##### レビュアー
+- **オーナーがレビューを行います**
+
+##### レビュー待ちの動き
+- ❌ **レビュー待ちの間、他のSubtaskに進まない**
+- ✅ **PR作成後は、オーナーのレビュー・承認・マージを完全に待つ**
+- ✅ **レビュー中に他の作業を進めない**
+
+**理由:**
+- 現状は少人数開発のため、並行作業によるコンフリクトを避ける
+- レビューでの修正指示を即座に反映できるようにする
+- ブランチ管理をシンプルに保つ
+
+**将来の変更予定:**
+- メンバーが増えた際は、依存関係のないSubtaskを並行開発できるように変更する可能性があります
+
+##### レビュー中の対応
+
+1. **PR作成後**
+   - オーナーに通知
+   - レビュー待ちの状態で待機
+
+2. **修正依頼があった場合**
+   - 指摘された箇所を修正
+   - 追加のコミットを作成
+   - プッシュして再レビュー依頼
+
+3. **承認された場合**
+   - オーナーがマージを実行
+   - マージ完了を確認
+   - Feature Branchを削除
+   - Topic/Main Branchを最新化
+
+### CI/CD
+
+#### CI実行タイミング
+- **全てのブランチ**: PR作成時およびpush時にCIを実行
+- **main**: マージ時に必ずCIを実行
+- **Topic Branch**: PR作成時およびpush時にCIを実行
+
+#### CI内容
+- 単体テスト
+- 結合テスト
+- Linterチェック
+- ビルド確認
 
 ## 使用可能コマンド
 
 ### ブランチ操作
 
+#### Topic Branchの作成
 ```bash
-# 新しいブランチを作成
-git checkout -b feature/[JiraのID]_[機能名]
+# mainから新しいTopic Branchを作成
+git checkout main
+git pull origin main
+git checkout -b topic/[JiraのID]_[機能名]
+git push -u origin topic/[JiraのID]_[機能名]
 
-# ブランチを切り替え
+# 例
+git checkout -b topic/SLEEVE-100_user_authentication
+```
+
+#### Feature Branchの作成（依存関係なし）
+```bash
+# Topic Branchから新しいFeature Branchを作成
+git checkout topic/[JiraのID]_[機能名]
+git pull origin topic/[JiraのID]_[機能名]
+git checkout -b feature/[JiraのSubtaskID]_[機能名]
+git push -u origin feature/[JiraのSubtaskID]_[機能名]
+
+# 例
+git checkout topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-101_firebase_setup
+```
+
+#### Feature Branchの作成（依存関係あり）
+```bash
+# 依存先のFeature Branchから新しいFeature Branchを作成
+git checkout feature/[依存先のJiraID]_[機能名]
+git pull origin feature/[依存先のJiraID]_[機能名]
+git checkout -b feature/[JiraのSubtaskID]_[機能名]
+git push -u origin feature/[JiraのSubtaskID]_[機能名]
+
+# 例: SLEEVE-103がSLEEVE-102に依存する場合
+git checkout feature/SLEEVE-102_user_model
+git checkout -b feature/SLEEVE-103_login_api
+```
+
+#### ブランチの切り替え
+```bash
 git checkout [ブランチ名]
+```
 
-# ブランチ一覧を表示
+#### ブランチ一覧の表示
+```bash
+# ローカルブランチ一覧
+git branch
+
+# リモートを含む全ブランチ一覧
 git branch -a
+```
 
-# ブランチを削除（ローカル）
+#### ブランチの削除
+```bash
+# ローカルブランチを削除
 git branch -d [ブランチ名]
+
+# リモートブランチを削除（マージ後）
+git push origin --delete [ブランチ名]
 ```
 
 ### コミット操作
@@ -166,7 +499,6 @@ git restore [ファイル]      # 特定ファイルを元に戻す
 
 - `test:` - テストの追加・修正
 - `test:unit` - 単体テストの追加・修正
-- `test:e2e` - E2E テストの追加・修正
 - `test:integration` - 統合テストの追加・修正
 
 #### ドキュメント関連
@@ -267,104 +599,116 @@ update
 - テストが通らない状態でのコミット
 - 意味のないコミット（「作業中」など）
 
-## プルリクエスト規約
 
-### プルリクエストタイトル
+## 実践例：ユーザー認証機能の開発フロー
 
-```
-[JiraのID]: [機能名・修正内容]
-```
+この例では、新しいブランチ戦略を使用して「ユーザー認証機能」を開発するフローを説明します。
 
-例:
+### 1. Jiraでのタスク管理
 
-- `SLEEVE-123: ユーザー認証機能の実装`
-- `SLEEVE-456: ログイン画面のバグ修正`
+**Epic**: `EPIC-50: ユーザー管理機能の実装`
 
-### プルリクエスト説明
+**Story/Task**: `SLEEVE-100: ユーザー認証機能の実装`
 
-```markdown
-## 概要
+**Subtask**:
+- `SLEEVE-101: Firebase Authenticationのセットアップ`
+- `SLEEVE-102: Userモデルの作成`
+- `SLEEVE-103: ログインAPIの実装` (102に依存)
+- `SLEEVE-104: ログアウトAPIの実装`
 
-[変更内容の概要]
+### 2. Topic Branchの作成
 
-## 変更内容
-
-- [具体的な変更内容 1]
-- [具体的な変更内容 2]
-
-## テスト
-
-- [ ] 単体テストが通過
-- [ ] E2E テストが通過
-- [ ] 手動テストが完了
-
-## 関連チケット
-
-- Jira チケット ID: [Jira の ID]
-
-## チェックリスト
-
-- [ ] コーディング規約に準拠
-- [ ] Linter エラーがない
-- [ ] ドキュメントが更新されている
+```bash
+git checkout main
+git pull origin main
+git checkout -b topic/SLEEVE-100_user_authentication
+git push -u origin topic/SLEEVE-100_user_authentication
 ```
 
-## ブランチ命名規約
+### 3. 各Subtaskの実装
 
-### 機能開発ブランチ
+#### Subtask 1: Firebase Authenticationのセットアップ（依存なし）
 
-```
-feature/[JiraのID]_[機能名]
-```
+```bash
+# Feature Branchを作成
+git checkout topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-101_firebase_setup
 
-例: `feature/SLEEVE-123_user_auth`
+# 実装...
 
-### リリースブランチ
-
-```
-release/[JiraのID]_[バージョン]
-```
-
-例: `release/SLEEVE-200_v1.2.0`
-
-### 緊急修正ブランチ
-
-```
-hotfix/[JiraのID]_[修正内容]
+# PR作成: feature/SLEEVE-101 → topic/SLEEVE-100
+# マージ方法: Squash and merge
 ```
 
-例: `hotfix/SLEEVE-789_security_fix`
+#### Subtask 2: Userモデルの作成（依存なし）
 
-### リファクタリングブランチ
+```bash
+# Feature Branchを作成
+git checkout topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-102_user_model
 
+# 実装...
+
+# PR作成: feature/SLEEVE-102 → topic/SLEEVE-100
+# マージ方法: Squash and merge
 ```
-refactor/[JiraのID]_[リファクタリング内容]
+
+#### Subtask 3: ログインAPIの実装（102に依存）
+
+```bash
+# 依存先のFeature Branchから作成
+git checkout feature/SLEEVE-102_user_model
+git checkout -b feature/SLEEVE-103_login_api
+
+# 実装...
+
+# PR作成: feature/SLEEVE-103 → feature/SLEEVE-102
+# マージ方法: Merge commit
+
+# 102がtopic branchにマージされた後、103もtopic branchにマージ
+# PR作成: feature/SLEEVE-103 → topic/SLEEVE-100
+# マージ方法: Squash and merge
 ```
 
-例: `refactor/SLEEVE-101_repository_structure`
+#### Subtask 4: ログアウトAPIの実装（依存なし）
 
-## マージ規約
+```bash
+# Feature Branchを作成
+git checkout topic/SLEEVE-100_user_authentication
+git checkout -b feature/SLEEVE-104_logout_api
 
-### マージ方法（Git Flow）
+# 実装...
 
-- **Squash and merge**: 機能ブランチのマージ時（feature → main）
-- **Merge commit**: リリースブランチのマージ時（release → main）
-- **Merge commit**: 緊急修正のマージ時（hotfix → main）
-- **Rebase and merge**: リファクタリングのマージ時（refactor → main）
+# PR作成: feature/SLEEVE-104 → topic/SLEEVE-100
+# マージ方法: Squash and merge
+```
 
-### リリースフロー
+### 4. Topic Branchをmainにマージ
 
-1. **機能開発**: feature ブランチで開発
-2. **リリース準備**: release ブランチで最終調整
-3. **リリース**: main ブランチにマージ + タグ作成
-4. **緊急修正**: hotfix ブランチで修正
+全てのSubtaskが完了したら、Topic Branchをmainにマージします。
 
-### マージ後の処理
+```bash
+# PR作成: topic/SLEEVE-100_user_authentication → main
+# マージ方法: Merge commit
+```
 
-1. ブランチの削除（リモート）
-2. ローカルブランチの削除
-3. 最新の main ブランチを取得
-4. 次のタスクブランチの作成
+### 5. ブランチのクリーンアップ
+
+```bash
+# ローカルブランチを削除
+git branch -d feature/SLEEVE-101_firebase_setup
+git branch -d feature/SLEEVE-102_user_model
+git branch -d feature/SLEEVE-103_login_api
+git branch -d feature/SLEEVE-104_logout_api
+git branch -d topic/SLEEVE-100_user_authentication
+
+# リモートブランチを削除
+git push origin --delete feature/SLEEVE-101_firebase_setup
+git push origin --delete feature/SLEEVE-102_user_model
+git push origin --delete feature/SLEEVE-103_login_api
+git push origin --delete feature/SLEEVE-104_logout_api
+git push origin --delete topic/SLEEVE-100_user_authentication
+```
 
 ## トラブルシューティング
 
