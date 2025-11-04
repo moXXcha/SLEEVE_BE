@@ -26,3 +26,8 @@ tasks:
     dir: ./app
     cmds:
       - docker exec sleeve-be gqlgen generate
+
+  lint-fmt:
+    dir: ./app
+    cmds:
+      - docker exec sleeve-be golangci-lint run --exclude-dirs ./graph

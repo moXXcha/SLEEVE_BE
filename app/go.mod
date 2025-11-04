@@ -3,7 +3,7 @@ module sleeve
 go 1.25.1
 
 require (
-	github.com/99designs/gqlgen v0.17.78
+	github.com/99designs/gqlgen v0.17.81
 	github.com/vektah/gqlparser/v2 v2.5.30
 )
 
@@ -14,5 +14,4 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
-	golang.org/x/net v0.43.0 // indirect
 )
