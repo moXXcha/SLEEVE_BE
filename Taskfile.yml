@@ -89,22 +89,41 @@ tasks:
   sql-gen:
     desc: "migrate用のsqlの生成"
     cmds:
-      - echo "未実装やで"
       - echo " 🦭 sql生成中... "
-      - docker exec sleeve-be go run entgo.io/ent/cmd/ent migrate diff ./ent/migrate --name {{.CLI_ARGS}}
+      - |
+        docker exec sleeve-be atlas migrate diff \
+          --dir "file://./migrate" \
+          --to "ent://./ent/schema" \
+          --dev-url "postgres://user:password@db:5432/sleeve_db?sslmode=disable"
+
       - echo " 🎀 完了！migrateしてね "
+
+  ent-gen:
+    desc: "entコードのgenerate"
+    cmds:
+      - echo "entコードのgenerateします..."
+      - docker exec sleeve-be go generate ./ent
 
   migrate-up:
     desc: "migration up"
     cmds:
-      - echo " 未実装やで "
+      - echo " マイグレーションを実行します... "
+      - |
+        docker exec sleeve-be atlas migrate apply\
+          --dir file://./migrate \
+          --url "postgres://user:password@db:5432/sleeve_db?sslmode=disable"
+      - echo " 🎉成功 "
 
-  migrate-down:
+  migrate-rollback:
     desc: "migration down"
     cmds:
-      - echo " みじっそうやで "
-
-  migrate-down-bulk:
-    desc: "指定位置まで一気にmigrate"
-    cmds:
-      - echo "未実装だけど{{.CLI_ARGS}}個downするよ"
+      - echo " migrationで1件巻き戻るよ "
+      - docker exec sleeve-db psql -U user -d postgres -c "DROP DATABASE IF EXISTS sleeve_db_dev;"
+      - docker exec sleeve-db psql -U user -d postgres -c "CREATE DATABASE sleeve_db_dev;"
+      - |
+        docker exec sleeve-be atlas migrate down \
+          --dir "file://migrate" \
+          --url "postgres://user:password@db:5432/sleeve_db?sslmode=disable" \
+          --dev-url "postgres://user:password@db:5432/sleeve_db_dev?sslmode=disable"
+      - docker exec sleeve-db psql -U user -d postgres -c "DROP DATABASE IF EXISTS sleeve_db_dev;"
+      - echo " ⏪ ロールバック完了 "
