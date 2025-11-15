@@ -4,7 +4,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sleeve/ent"
 	"sleeve/graph"
+	entdb "sleeve/repository/external/ent"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -27,13 +29,24 @@ const (
 
 func main() {
 	var port string
+	var client *ent.Client
+	var err error
 
 	port = os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	// DB クライアントを初期化
+	client, err = entdb.NewDBClient()
+	if err != nil {
+		log.Fatalf("DB接続エラー: %v", err)
+	}
+	defer client.Close()
+
+	log.Println("DB connected successfully!")
+
+	srv := handler.New(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{Client: client}}))
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
@@ -58,5 +71,7 @@ func main() {
 	}
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(server.ListenAndServe())
+	if err := server.ListenAndServe(); err != nil {
+		log.Printf("Server error: %v", err)
+	}
 }
