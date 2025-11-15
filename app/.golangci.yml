@@ -149,6 +149,8 @@ linters:
       - pkg/goformatters/gci/internal # extracted from gci code
       - pkg/goanalysis/runner_checker.go # extracted from x/tools code
       - graph # generate file
+      - ent # ent file
+      - migrate # migrate file
     rules:
       - path: (.+)_test\.go
         linters:
