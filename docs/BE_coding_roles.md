@@ -50,6 +50,10 @@
 ```
 be/
   app/
+    config/                # シークレット情報があります（エージェントは参照することを禁止します）
+      .env
+      .firebase.secret.json
+      etc...
     server.go              # サーバー起動時の処理
     error_presenter.go     # ErrorPresenterでカスタムエラーを定義
     tests/                 # 結合テスト置き場

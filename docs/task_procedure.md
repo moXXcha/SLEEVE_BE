@@ -516,14 +516,53 @@ git show HEAD
 
 ## 4. PR作成とレビューフロー
 
-### 4.1 PR作成前の確認
+### 4.1 PR作成前の準備
 
-PR作成前に、以下を確認してください：
+**重要**: Subtaskの実装とテストが完了したら、PR作成前に以下の手順を必ず実行してください。
 
-- 全ての単体テストが通過している
-- `golangci-lint run --fix`でLinterエラーがない
-- 全ての変更がコミット・プッシュされている
-- コミットメッセージが規約に従っている
+#### 4.1.1 最終確認
+
+```bash
+# 1. 変更されたファイルを確認（commit漏れがないかチェック）
+git status
+
+# 2. 全てのテストが通過することを確認
+cd app
+go test ./...
+
+# 3. Linterエラーがないことを確認
+golangci-lint run --fix
+cd ..
+```
+
+#### 4.1.2 コミットとプッシュ
+
+Subtaskの実装が完了したら、**その時点で**以下の手順を実行してください。
+
+```bash
+# 1. 未コミットの変更がある場合はコミット
+git add [ファイルパス]
+git commit -m "[適切なコミットメッセージ]"
+
+# 2. リモートにプッシュ
+git push origin feature/[SubtaskID]_[機能名]
+
+# 3. プッシュ後、commit漏れがないことを最終確認
+git status  # "nothing to commit, working tree clean" と表示されればOK
+```
+
+**コミットメッセージの形式**: `docs/github.md` の「コミットメッセージ規約」を参照してください。
+
+#### 4.1.3 最終チェックリスト
+
+PR作成前に、以下を全て確認してください：
+
+- [ ] `git status` で未コミットの変更がない
+- [ ] 全ての単体テストが通過している
+- [ ] `golangci-lint run --fix` でLinterエラーがない
+- [ ] 全ての変更がリモートにプッシュされている
+- [ ] コミットメッセージが規約に従っている
+- [ ] DB変更を行った場合は `docs/db_schema.md` を更新している
 
 ### 4.2 PR作成
 
@@ -550,38 +589,15 @@ PRディスクリプションのテンプレートは `.github/pull_request_temp
 
 **⚠️ 注意：以下は現状の運用です。メンバーが増えた際は変更される可能性があります。**
 
-#### 4.3.1 レビュアー
+PR作成後は、`docs/github.md` の「レビュー待機フロー（現状の運用）」セクションに従って、作業者のレビューを待ってください。
 
-- **オーナーがレビューを行います**
-
-#### 4.3.2 レビュー待ちの動き
-
+**現状の運用の要点**:
 - ❌ **レビュー待ちの間、他のSubtaskに進まない**
 - ✅ **PR作成後は、オーナーのレビュー・承認・マージを完全に待つ**
 - ✅ **レビュー中に他の作業を進めない**
+- ✅ **レビュー指摘があれば修正し、再度レビュー依頼**
 
-**理由：**
-- 現状は少人数開発のため、並行作業によるコンフリクトを避ける
-- レビューでの修正指示を即座に反映できるようにする
-- ブランチ管理をシンプルに保つ
-
-**将来の変更予定：**
-- メンバーが増えた際は、依存関係のないSubtaskを並行開発できるように変更する可能性があります
-
-#### 4.3.3 レビュー中の対応
-
-1. **PR作成後**
-   - オーナーに通知
-   - レビュー待ちの状態で待機
-
-2. **修正依頼があった場合**
-   - 指摘された箇所を修正
-   - 追加のコミットを作成
-   - プッシュして再レビュー依頼
-
-3. **承認された場合**
-   - オーナーがマージを実行
-   - マージ完了を確認
+詳細な手順、理由、将来の変更予定については `docs/github.md` を参照してください。
 
 ### 4.4 マージ後の処理
 
@@ -621,69 +637,14 @@ git pull origin main
 
 **ケース: topic → task1 → task2 のようにブランチが切られている場合**
 
-依存関係がある場合のマージは、**変更差分を見やすくする**ために以下の順序で行います。
+依存関係がある場合のマージは、**変更差分を見やすくする**ために特定の順序で行います。
 
-#### 4.5.1 具体的な手順
+詳細な手順（ステップ1〜4、具体的なコマンド例）については、`docs/github.md` の「依存関係があるSubtaskの詳細マージ手順」セクションを参照してください。
 
-```
-前提:
-- topic/SLEEVE-100_user_authentication (親ブランチ)
-- feature/SLEEVE-102_user_model (task1)
-- feature/SLEEVE-103_login_api (task2: 102に依存)
-```
-
-**ステップ1: task1を実装・PR作成**
-
-```bash
-# task1をtopicから分岐して実装
-git checkout topic/SLEEVE-100_user_authentication
-git checkout -b feature/SLEEVE-102_user_model
-
-# 実装・テスト・コミット...
-
-# PR作成（base: topic）
-gh pr create --base topic/SLEEVE-100_user_authentication --title "SLEEVE-102: Userモデルの作成"
-```
-
-**ステップ2: task1をtopicにマージ**
-
-- オーナーがレビュー・承認
-- Squash and mergeでtopicにマージ
-- task1のFeature Branchを削除
-
-**ステップ3: task2を実装・PR作成**
-
-```bash
-# task2をtask1から分岐して実装
-git checkout feature/SLEEVE-102_user_model
-git checkout -b feature/SLEEVE-103_login_api
-
-# 実装・テスト・コミット...
-
-# PR作成（base: task1）
-gh pr create --base feature/SLEEVE-102_user_model --title "SLEEVE-103: ログインAPIの実装"
-```
-
-**ステップ4: task1がtopicにマージ済みなので、task2をtopicにマージ**
-
-task1が既にtopicにマージされているため、task2の変更差分だけをtopicに取り込みます。
-
-```bash
-# task2のPRのベースをtopicに変更するか、新しいPRを作成
-# （この時点でtask2にはtask1の変更も含まれているが、topicには既にtask1がマージ済み）
-
-# 新しいPRを作成する場合
-git checkout feature/SLEEVE-103_login_api
-gh pr create --base topic/SLEEVE-100_user_authentication --title "SLEEVE-103: ログインAPIの実装"
-```
-
-- オーナーがレビュー・承認
-- Squash and mergeでtopicにマージ（**task2の変更差分だけがマージされる**）
-- task2のFeature Branchを削除
-
-**理由:**
-- task1 → task2 と分岐することで、task2のPRではtask2の変更だけが見やすくなる
-- 最終的にはtopicに両方マージされるが、レビュー時に変更差分が明確になる
+**基本原則**:
+- task1がtopicにマージ済みであれば、task2もtopicから分岐することで、task2のPRではtask2の変更だけが見やすくなる
+- task1 → task2 と分岐することで、レビュー時に変更差分が明確になる
+- Squash and mergeによって、task1の変更は重複せず、task2の変更差分だけがコミットされる
 
 ---
 
@@ -776,3 +737,174 @@ Topic BranchからmainへのPR作成時は、`docs/tasks/[JiraのID]_[タスク�
 - コードフォーマットの適用
 - DB変更を行った場合は `docs/db_schema.md` の更新を確認
 - 最終コミットの実行
+
+---
+
+## 8. Subtask完了時の手順
+
+Subtaskの実装が完了したら、以下の手順でPR作成まで進めてください。
+
+### 8.1 コミット漏れの確認
+
+PRを作成する前に、必ずコミット漏れがないかを確認してください。
+
+```bash
+# 作業ディレクトリの状態を確認
+git status
+```
+**確認ポイント**:
+- `Changes not staged for commit:` がないこと
+- `Untracked files:` に重要なファイルが含まれていないこと
+- 意図的に除外するファイル（`.env`など）以外がすべてコミット済みであること
+
+**コミット漏れがある場合**:
+```bash
+# ステージング
+git add <file>
+
+# コミット
+git commit -m "feat: 追加の変更内容
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Co-Authored-By: Claude <noreply@anthropic.com>"
+```
+
+### 8.2 リモートへのプッシュ
+
+すべてのコミットをリモートにプッシュしてください。
+
+```bash
+# リモートにプッシュ
+git push origin feature/[SubtaskID]_[機能名]
+```
+
+**注意事項**:
+
+- Feature Branch作成時に `git push -u origin` を実行していれば、`git push` のみで構いません
+- 初回プッシュの場合は `git push -u origin feature/[SubtaskID]_[機能名]` を実行してください
+
+### 8.3 PR作成
+
+#### 8.3.1 GitHub CLI（`gh`）を使用する場合
+
+**依存関係がない場合（topic branchへのPR）**:
+
+```bash
+gh pr create --base topic/[親ID]_[機能名] --title "[SubtaskID]: [タスク名]" --body-file docs/tasks/[JiraのID]_[タスク名]/pr_description_[SubtaskID].md
+```
+
+**依存関係がある場合（依存先feature branchへのPR）**:
+
+```bash
+gh pr create --base feature/[依存先SubtaskID]_[機能名] --title "[SubtaskID]: [タスク名]" --body-file docs/tasks/[JiraのID]_[タスク名]/pr_description_[SubtaskID].md
+```
+
+**単一タスクの場合（mainへのPR）**:
+
+```bash
+gh pr create --base main --title "[JiraのID]: [タスク名]" --body-file docs/tasks/[JiraのID]_[タスク名]/pr_description.md
+```
+
+#### 8.3.2 GitHub CLIが使えない場合
+
+`gh` コマンドが使えない場合、または認証エラーが発生する場合は、以下の手順でPR descriptionのみを作成し、作業者に手動でのPR作成を依頼してください。
+
+**1. PR descriptionファイルの作成**
+
+`.github/pull_request_template.md` のテンプレートを参照して、`docs/tasks/[JiraのID]_[タスク名]/pr_description_[SubtaskID].md` を作成してください。
+
+**2. 作業者への依頼**
+
+PR descriptionファイルを作成したら、作業者に以下の情報を伝えてPR作成を依頼してください：
+
+```
+以下の内容でPRを作成してください：
+
+- Base branch: topic/[親ID]_[機能名] (または依存先ブランチ、mainなど)
+- Compare branch: feature/[SubtaskID]_[機能名]
+- Title: [SubtaskID]: [タスク名]
+- Description: docs/tasks/[JiraのID]_[タスク名]/pr_description_[SubtaskID].md の内容をコピー
+
+```
+
+### 8.4 PR作成後の確認
+
+PR作成後は、以下を確認してください：
+
+- [ ] PR URLが正しく生成されている
+- [ ] Base branchとCompare branchが正しい
+- [ ] タイトルが正しい
+- [ ] Descriptionが適切に記載されている
+- [ ] 関連チケット（Jira）がリンクされている
+- [ ] テストが全て通過している（CI/CDが設定されている場合）
+
+### 8.5 レビュー待機
+
+PR作成後は、`docs/general.md` の「Ⅳ. Level 2: Subtask内の作業手順」→「5.1 レビュー待機フロー」に従って、作業者のレビューを待ってください。
+
+**現状の運用**:
+
+- PR作成後は、オーナーのレビュー・承認・マージを完全に待つ
+- レビュー中に他の作業を進めない
+- レビュー指摘があれば修正し、再度レビュー依頼
+
+---
+
+## 9. Topic Branch作成時の注意事項
+
+複数のSubtaskに分割する場合、Topic Branchを作成する際は、必ずリモートにプッシュしてください。
+
+```bash
+# Topic Branchを作成
+git checkout main
+git pull origin main
+git checkout -b topic/[JiraのID]_[機能名]
+# リモートにプッシュ（重要）
+git push -u origin topic/[JiraのID]_[機能名]
+```
+
+**理由**:
+
+- 各SubtaskのFeature Branchが、リモートのTopic Branchから分岐するため
+- チームメンバーが同じTopic Branchで作業できるようにするため
+- PRの作成時にBase branchとして指定するため
+
+---
+
+## 10. トラブルシューティング
+
+### 10.1 `gh pr create` が失敗する場合
+
+**エラー例**:
+
+```
+HTTP 401: Bad credentials (https://api.github.com/repos/...)
+```
+
+**対処法**:
+
+1. GitHub CLIの認証状態を確認: `gh auth status`
+
+2. 再認証: `gh auth login`
+
+3. それでも解決しない場合は、「8.3.2 GitHub CLIが使えない場合」の手順に従ってください
+
+### 10.2 コミット漏れに気づいた場合
+
+PRを作成した後にコミット漏れに気づいた場合：
+
+```bash
+# 追加のコミット
+git add <file>
+git commit -m "fix: コミット漏れを修正"
+git push origin feature/[SubtaskID]_[機能名]
+
+```
+
+PRは自動的に更新されます。レビュアーに追加のコミットを行ったことを伝えてください。
+
+### 10.3 間違ったブランチにPRを作成した場合
+
+PRを削除して再作成してください：
+
+1. GitHub上でPRをクローズ
+2. 正しいbase branchを指定してPRを再作成
