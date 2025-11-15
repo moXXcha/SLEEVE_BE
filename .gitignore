@@ -1,3 +1,165 @@
+# ========================================
+# 環境変数・秘密情報
+# ========================================
 .env
+.env.local
+.env.*.local
 *.secret.*
 **/config/**
+*.pem
+*.key
+
+# ========================================
+# Go
+# ========================================
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.txt
+coverage.html
+
+# Go workspace file
+go.work
+
+# Dependency directories (remove the comment below to include it)
+vendor/
+
+# ========================================
+# Docker
+# ========================================
+**/tmp/**
+*.log
+
+# ========================================
+# IDE・エディタ
+# ========================================
+# VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IntelliJ IDEA / GoLand
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+.netrwhist
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ========================================
+# OS
+# ========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# ========================================
+# データベース
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL
+*.dump
+*.sql.gz
+
+# ========================================
+# ログファイル
+# ========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========================================
+# 一時ファイル・キャッシュ
+# ========================================
+tmp/
+temp/
+.cache/
+*.tmp
+
+# ========================================
+# Air (ホットリロード)
+# ========================================
+tmp/
+**/tmp/
+
+# ========================================
+# テスト・デバッグ
+# ========================================
+# テスト用ファイル
+testdata/
+.test/
+
+# デバッグファイル
+debug
+__debug_bin
+
+# ========================================
+# ドキュメント（生成されたもの）
+# ========================================
+# Swagger / OpenAPI生成ファイル（必要に応じて）
+# swagger.json
+# swagger.yaml
+
+# ========================================
+# その他
+# ========================================
+# バックアップファイル
+*.bak
+*.backup
+*.old
+
+# 圧縮ファイル
+*.zip
+*.tar
+*.tar.gz
+*.rar
+
+# パッチファイル
+*.patch
+*.diff
