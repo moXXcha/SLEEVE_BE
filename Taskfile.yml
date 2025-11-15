@@ -30,4 +30,4 @@ tasks:
   lint-fmt:
     dir: ./app
     cmds:
-      - docker exec sleeve-be golangci-lint run --exclude-dirs ./graph
+      - docker exec sleeve-be golangci-lint run
