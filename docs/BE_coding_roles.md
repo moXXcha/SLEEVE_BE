@@ -79,9 +79,10 @@ be/
         utils/             # featureを跨ぐ処理
       utils/               # 全共通処理
     repository/            # 実際のDBアクセス
-      [entity名]_dao.go    # data access objectファイル
-      external_api/        # 外部API用の記述
-        [service_name]_api # それぞれのサービスのディレクトリ
+      internal/            # 内部サービス用の記述
+        [entity名]_dao.go  # data access objectファイル
+      external/            # 外部サービス用の記述
+        [service_name]     # それぞれのサービスのディレクトリ
     messages/              # メッセージ定義（実装ファイル）
       [feature]/           # 機能ごとのメッセージディレクトリ
         errors.go          # 機能固有のエラーメッセージ定義
