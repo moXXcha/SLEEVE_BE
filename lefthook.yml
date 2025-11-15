@@ -1,0 +1,14 @@
+# Lefthook configuration for SLEEVE project
+# https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: true
+  commands:
+    lint-fmt:
+      run: docker exec sleeve-be sh -c "cd /app && golangci-lint run"
+      stage_fixed: true
+
+commit-msg:
+  commands:
+    message-check:
+      run: app/scripts/check-commit-msg.sh {1}
