@@ -142,11 +142,11 @@ task lint-fmt
 | `task generate` | GraphQLスキーマからGoコードを生成（gqlgen） |
 | `task lint-fmt` | Linterとフォーマッターを実行 |
 | `task sql-gen` | migrationファイルを生成 |
-| `task ent-gen | entのコードを生成 |
-| `task migrate-up | migrateの実行 |
-| `task migrate-rollback | 1件migrateをrollback |
-| `task move-app-container | appコンテナに移動 |
-| `task move-db-container | dbコンテナに移動 |
+| `task ent-gen` | entのコードを生成 |
+| `task migrate-up` | migrateの実行 |
+| `task migrate-rollback` | 1件migrateをrollback |
+| `task move-app-container` | appコンテナに移動 |
+| `task move-db-container` | dbコンテナに移動 |
 
 ### コマンド詳細
 
