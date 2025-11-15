@@ -7,16 +7,25 @@ tasks:
 
   up:
     cmds:
+      - echo " 🔥 プロジェクトを立ち上げます... "
+      - sleep 2
       - docker compose up -d
+      - echo " ❤️‍🔥❤️‍🔥 let‘s do it!! ❤️‍🔥❤️‍🔥 "
 
   down:
     cmds:
+      - echo " 🥷 プロジェクトを停止します "
+      - sleep 2
       - docker compose down
+      - echo " 💤 おやすみ... "
 
   init:
     cmds:
+      - echo " 🔨 プロジェクトの初期化を行います... "
+      - sleep 2
       - docker compose down --rmi all --volumes --remove-orphans
       - docker compose up -d
+      - echo " ✅ 完了 "
 
   build:
     cmds:
@@ -25,9 +34,77 @@ tasks:
   generate:
     dir: ./app
     cmds:
+      - echo " 🪄 graphqlのファイルを生成します... "
+      - sleep 2
       - docker exec sleeve-be gqlgen generate
+      - echo " 🎉できたで "
 
   lint-fmt:
     dir: ./app
     cmds:
+      - echo " 🔪❤️ formatを開始します... "
+      - sleep 2
       - docker exec sleeve-be golangci-lint run
+      - echo " 🔪💕 完了 "
+
+  clean:
+    desc: "ビルド成果物、一時ファイル、テストファイルをクリーンアップ"
+    cmds:
+      - echo "🧹 クリーンアップを開始します..."
+      - sleep 2
+      - docker exec sleeve-be sh -c "cd /app && rm -rf tmp/* bin/* dist/*"
+      - docker exec sleeve-be sh -c "cd /app && find . -name '*.test' -delete"
+      - docker exec sleeve-be sh -c "cd /app && find . -name '*.out' -delete"
+      - docker exec sleeve-be sh -c "cd /app && rm -f coverage.txt coverage.html"
+      - docker exec sleeve-be sh -c "cd /app && find . -name '*.log' -delete"
+      - docker exec sleeve-be sh -c "cd /app && rm -f debug __debug_bin"
+      - echo "✅ クリーンアップが完了しました"
+
+  clean-all:
+    desc: "完全クリーンアップ（Docker含む）"
+    cmds:
+      - task: clean
+      - echo "🧹 Dockerリソースをクリーンアップします..."
+      - sleep 2
+      - docker compose down --volumes --remove-orphans
+      - docker system prune -f
+      - echo "✅ 完全クリーンアップが完了しました"
+
+  move-app-container:
+    desc: "appコンテナに移動"
+    cmds:
+      - echo " 🚃 appコンテナに移動中... "
+      - sleep 2
+      - docker exec -it sleeve-be sh
+      - echo " 🤓 おかえり "
+
+  move-db-container:
+    desc: "dbコンテナに移動"
+    cmds:
+      - echo " 🛺 dbコンテナに移動中... "
+      - sleep 2
+      - docker exec -it sleeve-db sh
+      - echo " 🦑 おかえり "
+
+  sql-gen:
+    desc: "migrate用のsqlの生成"
+    cmds:
+      - echo "未実装やで"
+      - echo " 🦭 sql生成中... "
+      - docker exec sleeve-be go run entgo.io/ent/cmd/ent migrate diff ./ent/migrate --name {{.CLI_ARGS}}
+      - echo " 🎀 完了！migrateしてね "
+
+  migrate-up:
+    desc: "migration up"
+    cmds:
+      - echo " 未実装やで "
+
+  migrate-down:
+    desc: "migration down"
+    cmds:
+      - echo " みじっそうやで "
+
+  migrate-down-bulk:
+    desc: "指定位置まで一気にmigrate"
+    cmds:
+      - echo "未実装だけど{{.CLI_ARGS}}個downするよ"

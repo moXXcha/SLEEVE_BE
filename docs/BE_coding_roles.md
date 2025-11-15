@@ -56,6 +56,7 @@ be/
       etc...
     server.go              # サーバー起動時の処理
     error_presenter.go     # ErrorPresenterでカスタムエラーを定義
+    ent/                   # ent関連のファイル
     tests/                 # 結合テスト置き場
       integration/         # 結合テストのディレクトリ
         [feature]/         # 機能ごとのディレクトリ
@@ -68,7 +69,6 @@ be/
       models/              # 生成モデル、domainモデルは置かない
     domain/                # model, customErrorの定義
       modles/
-        db_models/         # dbのテーブルの構造体定義
         code_models/       # コード上で使用するmodelの構造体
       services/            # DomainService（複数Entity間のロジック）
       errors/
@@ -79,6 +79,7 @@ be/
         utils/             # featureを跨ぐ処理
       utils/               # 全共通処理
     repository/            # 実際のDBアクセス
+      [entity名]_dao.go    # data access objectファイル
       external_api/        # 外部API用の記述
         [service_name]_api # それぞれのサービスのディレクトリ
     messages/              # メッセージ定義（実装ファイル）

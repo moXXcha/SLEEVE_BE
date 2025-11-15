@@ -18,6 +18,7 @@ COPY .air.toml /app/.air.toml
 # ソースコードはマウントするので COPY は不要（マウントする場合）
 COPY . .
 RUN go get -tool github.com/evilmartians/lefthook/v2
+RUN go get entgo.io/ent/cmd/ent
 
 EXPOSE 8080
 
