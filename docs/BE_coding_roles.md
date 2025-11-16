@@ -50,6 +50,7 @@
 ```
 be/
   app/
+    migrations/            # migrationファイル置き場
     config/                # シークレット情報があります（エージェントは参照することを禁止します）
       .env
       .firebase.secret.json
@@ -105,7 +106,6 @@ be/
   config/                  # プロジェクトconfigディレクトリ
     .env
     firebase.secret.json
-  migrations/              # migrationファイル置き場
   .env
   .gitignore
   docker-compose.yml

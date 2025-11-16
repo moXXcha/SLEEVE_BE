@@ -150,7 +150,7 @@ linters:
       - pkg/goanalysis/runner_checker.go # extracted from x/tools code
       - graph # generate file
       - ent # ent file
-      - migrate # migrate file
+      - migrations # migrate files
     rules:
       - path: (.+)_test\.go
         linters:
