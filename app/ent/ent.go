@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sleeve/ent/test"
+	"sleeve/ent/user"
 	"sync"
 
 	"entgo.io/ent"
@@ -74,6 +75,7 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			test.Table: test.ValidColumn,
+			user.Table: user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

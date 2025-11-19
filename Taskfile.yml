@@ -127,3 +127,10 @@ tasks:
           --dev-url "postgres://user:password@db:5432/sleeve_db_dev?sslmode=disable"
       - docker exec sleeve-db psql -U user -d postgres -c "DROP DATABASE IF EXISTS sleeve_db_dev;"
       - echo " ⏪ ロールバック完了 "
+
+  new-ent-schema:
+    desc: "ent schemaの生成"
+    cmds:
+      - echo "ent schemaを作成します"
+      - ent new {{.CLI_ARGS}}
+      - "🎉 完了"

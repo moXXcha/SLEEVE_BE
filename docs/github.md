@@ -21,6 +21,7 @@ AI エージェントが一貫性のあるコミットとプルリクエスト�
 
 - **Topic Branch = 1つの機能単位**: Topic Branchは1つの完結した機能（例: ユーザー登録機能）
 - **各PR = レイヤー × 操作単位**: 1つのレイヤーの1操作実装、単体テストで動作確認可能
+  - **migrateをする際はmigrateとentのコード生成で1つPRを作ること**
 - **Topic Branch運用**: 大きなタスクは複数のサブタスクに分割し、Topic Branchを親として管理する
 - **依存関係の許容**: PRの依存関係を許容し、依存先を親としてブランチを切る
 - **Jira連携**: ブランチごとにJiraでSubtaskを作成し、進捗管理を明確にする
@@ -150,6 +151,7 @@ Topic Branch = 1つの機能単位（例: ユーザー登録機能、ユーザ�
 **注意事項**:
 - 機能の完結性を優先してください
 - レビュー時間が30分を大きく超える場合は分割を検討してください
+- migrateをする際はmigrateとentのコード生成で1つPRを作ってください
 
 ### 推奨する分割パターン（レイヤー × CRUD操作）
 
@@ -198,6 +200,26 @@ Topic: [機能名]（例: ユーザー登録機能）
 - 50〜150行、1〜3ファイル
 - レビュー時間: 10〜15分
 ```
+
+### Migrate処理のPR (1操作)
+
+```
+含むもの
+- ent schemaの修正
+- entコード生成
+- migrationファイル
+- docs/のschemaの修正
+```
+
+動作確認
+- task migrate-up
+
+サイズ感:
+- migrationファイル
+- ent schemaの修正
+- entコード生成
+- docs/のschemaの修正
+これ以外基本含めない
 
 #### Repository層のPR（1操作）
 
@@ -262,7 +284,8 @@ Topic Branch: topic/SLEEVE-100_user_registration
 完結した機能: ユーザーがメールアドレスとパスワードで新規登録できる
 
 Subtask分割:
-
+|
+|
 ├─ PR1: SLEEVE-101: Userモデル定義
 │   📁 変更ファイル:
 │   - app/domain/models/code_models/user.go (新規)
