@@ -17,11 +17,14 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).
+		// 内部ID（auto increment、外部には公開しない）
+		// entのデフォルトIDはintのauto incrementなので、明示的な定義は不要
+		// 公開ID（UUID、外部に公開する）
+		field.UUID("public_id", uuid.UUID{}).
 			Default(uuid.New).
 			Unique().
 			Immutable().
-			Comment("ユーザーID"),
+			Comment("公開用ユーザーID（UUID）"),
 		field.String("firebase_uid").
 			NotEmpty().
 			Unique().
@@ -53,6 +56,9 @@ func (User) Edges() []ent.Edge {
 // Indexes of the User.
 func (User) Indexes() []ent.Index {
 	return []ent.Index{
+		// public_idにインデックス（外部からの検索用）
+		index.Fields("public_id").
+			Unique(),
 		// firebase_uidにインデックス
 		index.Fields("firebase_uid").
 			Unique(),
