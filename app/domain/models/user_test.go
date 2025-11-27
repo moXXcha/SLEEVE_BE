@@ -1,4 +1,4 @@
-package code_models
+package models
 
 import (
 	"testing"
@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const test_firebase_uid = "firebase_uid_123"
+
 func TestNewUser_Success(t *testing.T) {
 	// Arrange
 	var firebase_uid string
@@ -14,7 +16,7 @@ func TestNewUser_Success(t *testing.T) {
 	var user *User
 	var err error
 
-	firebase_uid = "firebase_uid_123"
+	firebase_uid = test_firebase_uid
 	email, err = NewEmail("test@example.com")
 	if err != nil {
 		t.Fatalf("failed to create email: %v", err)
@@ -28,8 +30,8 @@ func TestNewUser_Success(t *testing.T) {
 	if user == nil {
 		t.Fatal("expected user to be not nil")
 	}
-	if user.ID() == uuid.Nil {
-		t.Error("expected user ID to be not nil")
+	if user.PublicID() == uuid.Nil {
+		t.Error("expected user PublicID to be not nil")
 	}
 	if user.FirebaseUID() != firebase_uid {
 		t.Errorf("expected firebase_uid %s, got %s", firebase_uid, user.FirebaseUID())
@@ -67,9 +69,9 @@ func TestNewUser_EmptyFirebaseUID(t *testing.T) {
 	}
 }
 
-func TestNewUserWithID_Success(t *testing.T) {
+func TestNewUserWithPublicID_Success(t *testing.T) {
 	// Arrange
-	var id uuid.UUID
+	var public_id uuid.UUID
 	var firebase_uid string
 	var email Email
 	var created_at time.Time
@@ -77,8 +79,8 @@ func TestNewUserWithID_Success(t *testing.T) {
 	var user *User
 	var err error
 
-	id = uuid.New()
-	firebase_uid = "firebase_uid_123"
+	public_id = uuid.New()
+	firebase_uid = test_firebase_uid
 	email, err = NewEmail("test@example.com")
 	if err != nil {
 		t.Fatalf("failed to create email: %v", err)
@@ -86,7 +88,7 @@ func TestNewUserWithID_Success(t *testing.T) {
 	created_at = time.Now().Add(-time.Hour)
 	updated_at = time.Now()
 	// Act
-	user, err = NewUserWithID(id, firebase_uid, email, created_at, updated_at, nil)
+	user, err = NewUserWithPublicID(public_id, firebase_uid, email, created_at, updated_at, nil)
 	// Assert
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
@@ -94,8 +96,8 @@ func TestNewUserWithID_Success(t *testing.T) {
 	if user == nil {
 		t.Fatal("expected user to be not nil")
 	}
-	if user.ID() != id {
-		t.Errorf("expected id %s, got %s", id, user.ID())
+	if user.PublicID() != public_id {
+		t.Errorf("expected public_id %s, got %s", public_id, user.PublicID())
 	}
 	if user.FirebaseUID() != firebase_uid {
 		t.Errorf("expected firebase_uid %s, got %s", firebase_uid, user.FirebaseUID())
@@ -116,7 +118,7 @@ func TestNewUserWithID_Success(t *testing.T) {
 
 func TestUser_IsDeleted(t *testing.T) {
 	// Arrange
-	var id uuid.UUID
+	var public_id uuid.UUID
 	var firebase_uid string
 	var email Email
 	var created_at time.Time
@@ -126,8 +128,8 @@ func TestUser_IsDeleted(t *testing.T) {
 	var user_deleted *User
 	var err error
 
-	id = uuid.New()
-	firebase_uid = "firebase_uid_123"
+	public_id = uuid.New()
+	firebase_uid = test_firebase_uid
 	email, err = NewEmail("test@example.com")
 	if err != nil {
 		t.Fatalf("failed to create email: %v", err)
@@ -135,11 +137,11 @@ func TestUser_IsDeleted(t *testing.T) {
 	created_at = time.Now().Add(-time.Hour)
 	updated_at = time.Now()
 	deleted_at = time.Now()
-	user_not_deleted, err = NewUserWithID(id, firebase_uid, email, created_at, updated_at, nil)
+	user_not_deleted, err = NewUserWithPublicID(public_id, firebase_uid, email, created_at, updated_at, nil)
 	if err != nil {
 		t.Fatalf("failed to create user_not_deleted: %v", err)
 	}
-	user_deleted, err = NewUserWithID(uuid.New(), firebase_uid, email, created_at, updated_at, &deleted_at)
+	user_deleted, err = NewUserWithPublicID(uuid.New(), firebase_uid, email, created_at, updated_at, &deleted_at)
 	if err != nil {
 		t.Fatalf("failed to create user_deleted: %v", err)
 	}

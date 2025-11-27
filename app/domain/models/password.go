@@ -1,4 +1,4 @@
-package code_models
+package models
 
 import (
 	"fmt"
@@ -87,7 +87,7 @@ func (p Password) Value() string {
 }
 
 // String はパスワードをマスクして返します（セキュリティ上の理由から）
-func (p Password) String() string {
+func (Password) String() string {
 	return "********"
 }
 

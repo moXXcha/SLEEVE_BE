@@ -1,4 +1,4 @@
-package code_models
+package models
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 // User はユーザーを表すエンティティです
 type User struct {
-	id           uuid.UUID
+	public_id    uuid.UUID
 	firebase_uid string
 	email        Email
 	created_at   time.Time
@@ -26,7 +26,7 @@ func NewUser(firebase_uid string, email Email) (*User, error) {
 	}
 	now = time.Now()
 	return &User{
-		id:           uuid.New(),
+		public_id:    uuid.New(),
 		firebase_uid: firebase_uid,
 		email:        email,
 		created_at:   now,
@@ -35,9 +35,9 @@ func NewUser(firebase_uid string, email Email) (*User, error) {
 	}, nil
 }
 
-// NewUserWithID は既存のIDを持つUserエンティティを作成します（DBからの復元用）
-func NewUserWithID(
-	id uuid.UUID,
+// NewUserWithPublicID は既存の公開IDを持つUserエンティティを作成します（DBからの復元用）
+func NewUserWithPublicID(
+	public_id uuid.UUID,
 	firebase_uid string,
 	email Email,
 	created_at time.Time,
@@ -48,7 +48,7 @@ func NewUserWithID(
 		return nil, fmt.Errorf("firebase_uid cannot be empty")
 	}
 	return &User{
-		id:           id,
+		public_id:    public_id,
 		firebase_uid: firebase_uid,
 		email:        email,
 		created_at:   created_at,
@@ -57,9 +57,9 @@ func NewUserWithID(
 	}, nil
 }
 
-// ID はユーザーIDを返します
-func (u *User) ID() uuid.UUID {
-	return u.id
+// PublicID は公開用ユーザーIDを返します
+func (u *User) PublicID() uuid.UUID {
+	return u.public_id
 }
 
 // FirebaseUID はFirebase UIDを返します
