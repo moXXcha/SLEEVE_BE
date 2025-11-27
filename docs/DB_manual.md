@@ -18,6 +18,112 @@
 - **汎用性:** 将来的な拡張性を考慮し、過度に特定のユースケースに最適化しすぎないように設計してください。
 - **認証, user 情報について:** 認証、ユーザーの基本情報は firebase で管理しています。
 - **orm:** orm は ent を使用しています
+- **ID設計:** 外部公開テーブルでは「1.1 ID設計方針」に従ってください。
+
+### 1.1 ID設計方針
+
+#### 基本ルール
+
+**全てのテーブル**で、主キー`id`は`int (auto increment)`を使用します。entのデフォルト設定なので、明示的な定義は不要です。
+
+#### public_idが必要かどうかの判定
+
+`public_id`（UUID）は、**外部に公開するテーブルのみ**に追加します。以下のフローチャートで判定してください：
+
+```
+テーブルを新規作成する
+    ↓
+Q1: このテーブルのデータは外部APIのレスポンスとして返されるか？
+    → Yes → public_id必要
+    → No → Q2へ
+    ↓
+Q2: このテーブルのIDはURLに含まれるか？（例: /users/{id}, /items/{id}）
+    → Yes → public_id必要
+    → No → Q3へ
+    ↓
+Q3: このテーブルのIDは外部システム（フロントエンド含む）に渡されるか？
+    → Yes → public_id必要
+    → No → public_id不要（idのみでOK）
+```
+
+#### public_idが必要なテーブル（例）
+
+| テーブル | 理由 |
+|---------|------|
+| users | APIレスポンス、URL（/users/{public_id}）で使用 |
+| items | APIレスポンス、URL（/items/{public_id}）で使用 |
+| coordinates | APIレスポンス、URL（/coordinates/{public_id}）で使用 |
+| posts | APIレスポンス、URL（/posts/{public_id}）で使用 |
+| comments | APIレスポンスで使用 |
+
+#### public_idが不要なテーブル（例）
+
+| テーブル | 理由 |
+|---------|------|
+| user_settings | 内部でのみ使用、APIでIDを返さない |
+| user_item（中間テーブル） | 内部結合のみに使用 |
+| audit_logs | ログテーブル、外部に公開しない |
+| app_configs | 設定テーブル、内部のみ |
+
+#### ID設計の概要
+
+| カラム名 | 型 | 用途 | 公開 | 全テーブル必須 |
+|---------|---|------|-----|--------------|
+| id | int (auto increment) | 主キー・内部での参照・外部キー結合に使用 | 非公開 | **必須** |
+| public_id | uuid | 外部API・URLで使用（データ作成時にDBで自動生成） | 公開 | 条件付き |
+
+#### 理由
+
+- **セキュリティ**: auto incrementのIDは連番のため、ユーザー数やデータ量が推測されやすい。UUIDを公開することでこれを防ぐ
+- **パフォーマンス**: 内部結合にはintのIDを使用することで、JOINの効率を維持
+- **拡張性**: 将来的にシャーディングが必要になった場合、UUIDの方が分散に適している
+
+#### ent/schemaでの実装例
+
+**public_idが必要なテーブル:**
+```go
+import (
+    "github.com/google/uuid"
+)
+
+func (User) Fields() []ent.Field {
+    return []ent.Field{
+        // idはentのデフォルト（int auto increment）なので定義不要
+
+        // 公開ID（UUID）を追加
+        field.UUID("public_id", uuid.UUID{}).
+            Default(uuid.New).
+            Unique().
+            Immutable().
+            Comment("公開用ID（UUID）"),
+        // 他のフィールド...
+    }
+}
+
+func (User) Indexes() []ent.Index {
+    return []ent.Index{
+        // public_idにユニークインデックスを設定
+        index.Fields("public_id").Unique(),
+    }
+}
+```
+
+**public_idが不要なテーブル:**
+```go
+func (UserSetting) Fields() []ent.Field {
+    return []ent.Field{
+        // idはentのデフォルト（int auto increment）なので定義不要
+        // public_idは不要
+
+        field.Int("user_id").
+            Comment("ユーザーID"),
+        field.String("setting_key").
+            Comment("設定キー"),
+        field.String("setting_value").
+            Comment("設定値"),
+    }
+}
+```
 
 ## 2. Schema の位置
 
@@ -101,21 +207,34 @@ task migrate-up
 
 **例**:
 ```
+// 外部公開テーブル（ID設計方針に従う）
 Table users {
-  id integer [primary key]
+  id int [primary key, increment, note: '内部ID（auto increment、外部には公開しない）']
+  public_id uuid [not null, unique, note: '公開用ID（UUID、外部APIで使用）']
   username varchar
   email varchar [unique]
   created_at timestamp
 }
 
 Table posts {
-  id integer [primary key]
-  user_id integer [ref: > users.id]
+  id int [primary key, increment, note: '内部ID']
+  public_id uuid [not null, unique, note: '公開用ID']
+  user_id int [ref: > users.id, note: '内部IDで結合']
   title varchar
   content text
   created_at timestamp
 }
+
+// 内部のみで使用するテーブル（public_id不要）
+Table user_settings {
+  id int [primary key, increment]
+  user_id int [ref: > users.id]
+  setting_key varchar
+  setting_value varchar
+}
 ```
+
+**注意**: 外部公開テーブルでは `id`（内部ID）と `public_id`（公開ID）の両方を持ちます。リレーション（外部キー）は常に内部ID（`id`）を使用します。
 
 #### 5-2. 更新確認チェックリスト
 
@@ -126,6 +245,10 @@ Table posts {
 - [ ] 両者の内容が一致している（矛盾がない）
 - [ ] リレーション（外部キー）が正しく定義されている
 - [ ] インデックスが適切に定義されている
+- [ ] 外部公開テーブルの場合、ID設計方針（1.1参照）に従っているか
+  - [ ] `id`（int, auto increment）が内部IDとして定義されている
+  - [ ] `public_id`（uuid）が公開IDとして定義されている
+  - [ ] `public_id`にユニークインデックスが設定されている
 
 ### 手順 6: マイグレーションのロールバック（必要時のみ）
 
