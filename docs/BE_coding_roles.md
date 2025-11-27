@@ -34,13 +34,13 @@
    - **DomainService**: 複数のEntityにまたがるビジネスロジック
    - **DomainError**: ドメイン固有のエラー定義
    - **配置場所**:
-     - `domain/models/code_models/` - Entity、ValueObject
-     - `domain/models/db_models/` - DBスキーマに対応する構造体
+     - `domain/models/` - Entity、ValueObject
      - `domain/services/` - DomainService（複数Entity間のロジック）
      - `domain/errors/` - ドメイン固有エラー
    - **責務の境界**:
      - Domain層：ビジネスルールの検証（例: メールアドレス形式チェック）
      - UseCase層：ビジネスフローの制御（例: ユーザー登録の手続き）
+   - **注意**: DBスキーマに対応する構造体は`ent/`が自動生成するため、Domain層では管理しない
 4. **Repository / Infrastructure**
    - 永続化・外部サービス接続。
    - interface と実装を分ける。
@@ -69,8 +69,7 @@ be/
       resolver.go          # 依存注入
       models/              # 生成モデル、domainモデルは置かない
     domain/                # model, customErrorの定義
-      modles/
-        code_models/       # コード上で使用するmodelの構造体
+      models/              # Entity、ValueObject（コード上で使用するmodelの構造体）
       services/            # DomainService（複数Entity間のロジック）
       errors/
     usecase/               # domainモデルのinterface定義、処理呼び出し、resolverへの返信（外部APIはrepository層で行うこと）

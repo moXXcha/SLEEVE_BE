@@ -17,8 +17,9 @@ import (
 type User struct {
 	config `json:"-"`
 	// ID of the ent.
-	// ユーザーID
-	ID uuid.UUID `json:"id,omitempty"`
+	ID int `json:"id,omitempty"`
+	// 公開用ユーザーID（UUID）
+	PublicID uuid.UUID `json:"public_id,omitempty"`
 	// Firebase Authentication UID
 	FirebaseUID string `json:"firebase_uid,omitempty"`
 	// メールアドレス
@@ -37,11 +38,13 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldID:
+			values[i] = new(sql.NullInt64)
 		case user.FieldFirebaseUID, user.FieldEmail:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
-		case user.FieldID:
+		case user.FieldPublicID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -59,10 +62,16 @@ func (_m *User) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case user.FieldID:
+			value, ok := values[i].(*sql.NullInt64)
+			if !ok {
+				return fmt.Errorf("unexpected type %T for field id", value)
+			}
+			_m.ID = int(value.Int64)
+		case user.FieldPublicID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field id", values[i])
+				return fmt.Errorf("unexpected type %T for field public_id", values[i])
 			} else if value != nil {
-				_m.ID = *value
+				_m.PublicID = *value
 			}
 		case user.FieldFirebaseUID:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -131,6 +140,9 @@ func (_m *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("public_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PublicID))
+	builder.WriteString(", ")
 	builder.WriteString("firebase_uid=")
 	builder.WriteString(_m.FirebaseUID)
 	builder.WriteString(", ")

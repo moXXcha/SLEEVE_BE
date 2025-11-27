@@ -14,6 +14,8 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldPublicID holds the string denoting the public_id field in the database.
+	FieldPublicID = "public_id"
 	// FieldFirebaseUID holds the string denoting the firebase_uid field in the database.
 	FieldFirebaseUID = "firebase_uid"
 	// FieldEmail holds the string denoting the email field in the database.
@@ -31,6 +33,7 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldPublicID,
 	FieldFirebaseUID,
 	FieldEmail,
 	FieldCreatedAt,
@@ -49,6 +52,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DefaultPublicID holds the default value on creation for the "public_id" field.
+	DefaultPublicID func() uuid.UUID
 	// FirebaseUIDValidator is a validator for the "firebase_uid" field. It is called by the builders before save.
 	FirebaseUIDValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
@@ -59,8 +64,6 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -69,6 +72,11 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByPublicID orders the results by the public_id field.
+func ByPublicID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicID, opts...).ToFunc()
 }
 
 // ByFirebaseUID orders the results by the firebase_uid field.
