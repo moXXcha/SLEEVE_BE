@@ -76,6 +76,7 @@ be/
     usecase/               # domainモデルのinterface定義、処理呼び出し、resolverへの返信（外部APIはrepository層で行うこと）
       feature/             # 機能のディレクトリ
         [機能名]/           # 機能ごとのディレクトリ
+          dto/             # Data Transfer Object（UseCase層の入出力データ構造）
           utils/           # 機能ごとのファイルAI補助、error判定関数、parseや計算処理など
         utils/             # featureを跨ぐ処理
       utils/               # 全共通処理
