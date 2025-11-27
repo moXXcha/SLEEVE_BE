@@ -27,6 +27,10 @@ func init() {
 	test.DefaultDone = testDescDone.Default.(bool)
 	userFields := schema.User{}.Fields()
 	_ = userFields
+	// userDescPublicID is the schema descriptor for public_id field.
+	userDescPublicID := userFields[0].Descriptor()
+	// user.DefaultPublicID holds the default value on creation for the public_id field.
+	user.DefaultPublicID = userDescPublicID.Default.(func() uuid.UUID)
 	// userDescFirebaseUID is the schema descriptor for firebase_uid field.
 	userDescFirebaseUID := userFields[1].Descriptor()
 	// user.FirebaseUIDValidator is a validator for the "firebase_uid" field. It is called by the builders before save.
@@ -45,8 +49,4 @@ func init() {
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// userDescID is the schema descriptor for id field.
-	userDescID := userFields[0].Descriptor()
-	// user.DefaultID holds the default value on creation for the id field.
-	user.DefaultID = userDescID.Default.(func() uuid.UUID)
 }

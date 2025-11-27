@@ -11,48 +11,53 @@ import (
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.User {
+func ID(id int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.User {
+func IDEQ(id int) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.User {
+func IDNEQ(id int) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.User {
+func IDIn(ids ...int) predicate.User {
 	return predicate.User(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.User {
+func IDNotIn(ids ...int) predicate.User {
 	return predicate.User(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.User {
+func IDGT(id int) predicate.User {
 	return predicate.User(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.User {
+func IDGTE(id int) predicate.User {
 	return predicate.User(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.User {
+func IDLT(id int) predicate.User {
 	return predicate.User(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.User {
+func IDLTE(id int) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
+}
+
+// PublicID applies equality check predicate on the "public_id" field. It's identical to PublicIDEQ.
+func PublicID(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPublicID, v))
 }
 
 // FirebaseUID applies equality check predicate on the "firebase_uid" field. It's identical to FirebaseUIDEQ.
@@ -78,6 +83,46 @@ func UpdatedAt(v time.Time) predicate.User {
 // DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
 func DeletedAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// PublicIDEQ applies the EQ predicate on the "public_id" field.
+func PublicIDEQ(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPublicID, v))
+}
+
+// PublicIDNEQ applies the NEQ predicate on the "public_id" field.
+func PublicIDNEQ(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPublicID, v))
+}
+
+// PublicIDIn applies the In predicate on the "public_id" field.
+func PublicIDIn(vs ...uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPublicID, vs...))
+}
+
+// PublicIDNotIn applies the NotIn predicate on the "public_id" field.
+func PublicIDNotIn(vs ...uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPublicID, vs...))
+}
+
+// PublicIDGT applies the GT predicate on the "public_id" field.
+func PublicIDGT(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPublicID, v))
+}
+
+// PublicIDGTE applies the GTE predicate on the "public_id" field.
+func PublicIDGTE(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPublicID, v))
+}
+
+// PublicIDLT applies the LT predicate on the "public_id" field.
+func PublicIDLT(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPublicID, v))
+}
+
+// PublicIDLTE applies the LTE predicate on the "public_id" field.
+func PublicIDLTE(v uuid.UUID) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPublicID, v))
 }
 
 // FirebaseUIDEQ applies the EQ predicate on the "firebase_uid" field.
