@@ -2,6 +2,11 @@
 
 package model
 
+type AuthTokens struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+}
+
 type Mutation struct {
 }
 
@@ -11,6 +16,21 @@ type NewTodo struct {
 }
 
 type Query struct {
+}
+
+type RegisterUserInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type RegisterUserPayload struct {
+	User   *RegisteredUser `json:"user"`
+	Tokens *AuthTokens     `json:"tokens"`
+}
+
+type RegisteredUser struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
 }
 
 type Todo struct {
