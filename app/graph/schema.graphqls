@@ -23,6 +23,32 @@ input NewTodo {
   userId: String!
 }
 
+# ユーザー登録の入力
+input RegisterUserInput {
+  email: String!
+  password: String!
+}
+
+# 認証トークンペア
+type AuthTokens {
+  accessToken: String!
+  refreshToken: String!
+}
+
+# 登録されたユーザー情報
+type RegisteredUser {
+  id: ID!
+  email: String!
+}
+
+# ユーザー登録の結果
+type RegisterUserPayload {
+  user: RegisteredUser!
+  tokens: AuthTokens!
+}
+
 type Mutation {
   createTodo(input: NewTodo!): Todo!
+  # ユーザー登録
+  registerUser(input: RegisterUserInput!): RegisterUserPayload!
 }
